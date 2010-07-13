@@ -11,7 +11,6 @@ import (
     "runtime"
     "sort"
     "strconv"
-    "fmt"
 )
 
 // Marshal returns the JSON encoding of v.
@@ -55,7 +54,6 @@ import (
 // an infinite recursion.
 //
 func Marshal(v interface{}) ([]byte, os.Error) {
-    fmt.Printf("Marshal: %v\n", v)
     e := &encodeState{}
     err := e.marshal(v)
     if err != nil {
@@ -122,7 +120,6 @@ func (e *encodeState) marshal(v interface{}) (err os.Error) {
             err = r.(os.Error)
         }
     }()
-    fmt.Printf("marshal: %v\n", v)
     e.reflectValue(reflect.NewValue(v))
     return nil
 }
