@@ -7,7 +7,13 @@ include $(GOROOT)/src/Make.$(GOARCH)
 TARG=xmlencoder
 GOFILES=\
 	indent.go\
-	encode.go\
-	xmlencoder.go
+	encode.go
 
-include $(GOROOT)/src/Make.cmd
+GOFMT=gofmt -spaces=true -tabindent=false -tabwidth=4
+
+include $(GOROOT)/src/Make.pkg
+
+fmt:
+	for src in *.go; do \
+		${GOFMT} -w $$src; \
+	done
