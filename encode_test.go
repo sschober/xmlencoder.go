@@ -25,9 +25,9 @@ func TestMarshal(t *testing.T) {
     fmt.Printf("%s\n", string(result))
 }
 
-var TestMarshalAndNamespace(t *testing.T) {
+func TestMarshalAndNamespace(t *testing.T) {
     mapping := NewNSMap(r, "myns")
-    result, err := Marshal(r, mapping)
+    result, err := MarshalWithNSMap(r, mapping)
     if err != nil {
         t.Fatalf("Marshal r: %v", err)
     }
