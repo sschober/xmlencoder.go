@@ -11,6 +11,7 @@ import (
     "runtime"
     "sort"
     "strconv"
+    "fmt"
 )
 
 // Marshal returns the JSON encoding of v.
@@ -54,11 +55,11 @@ import (
 // an infinite recursion.
 //
 func Marshal(v interface{}) ([]byte, os.Error) {
-    return MarshalWithNSMap(v, make(map[reflect.Type]string))
+    return MarshalWithNSMap(v, make(map[string]string))
 }
 
 func MarshalWithNSMap(v interface{}, nsmap NSMap) ([]byte, os.Error) {
-    e := &encodeState{}
+    e := &encodeState{nsmap:nsmap}
     err := e.marshal(v)
     if err != nil {
         return nil, err
@@ -66,10 +67,26 @@ func MarshalWithNSMap(v interface{}, nsmap NSMap) ([]byte, os.Error) {
     return e.Bytes(), nil
 }
 
-type NSMap map[reflect.Type]string
+//type NSMap map[reflect.Type]string
+type NSMap map[string]string
 
+// Adds a namespace mapping for type of v
+//
+// Note:
+//  This seems overly complex, as i have to create a reflect value
+//  first. Then I have to check if its an interfaceOrPtrValue an if
+//  so, consider its Elem(), then its Type().Name().
 func NewNSMap(v interface{}, ns string) NSMap {
-    return NSMap{reflect.Typeof(v): ns}
+    var typeName string
+    rf := reflect.NewValue(v)
+    switch rt := rf.(type){
+      case interfaceOrPtrValue:
+	typeName = rt.Elem().Type().Name()
+      default:
+	typeName = rt.Type().Name()
+    }
+    fmt.Printf("Adding %s\n", typeName)
+    return NSMap{typeName:ns}
 }
 /*
 // MarshalIndent is like Marshal but applies Indent to format the output.
@@ -119,6 +136,7 @@ var hex = "0123456789abcdef"
 // An encodeState encodes JSON into a bytes.Buffer.
 type encodeState struct {
     bytes.Buffer // accumulated output
+    nsmap NSMap
 }
 
 func (e *encodeState) marshal(v interface{}) (err os.Error) {
@@ -252,6 +270,9 @@ func (sv stringValues) get(i int) string   { return sv[i].(*reflect.StringValue)
 func (e *encodeState) openTag(s string) {
     e.WriteByte('<')
     e.WriteString(s)
+    if ns, ok := e.nsmap[s]; ok {
+      e.WriteString(" xmlns=\""+ns+"\"")
+    }
     e.WriteByte('>')
 }
 

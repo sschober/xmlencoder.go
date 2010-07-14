@@ -6,9 +6,9 @@ import (
 )
 
 type Roar struct {
-    Author       string
-    Text         string
-    CreationDate string
+    Author       string "author"
+    Text         string "text"
+    CreationDate string "creationDate"
 }
 
 func NewRoar(author, text, creationDate string) *Roar {
