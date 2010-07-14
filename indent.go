@@ -10,7 +10,7 @@ import (
     "fmt"
 )
 
-// Compact appends to dst the JSON-encoded src with
+// Compact appends to dst the XML-encoded src with
 // insignificant space characters elided.
 func Compact(dst *bytes.Buffer, src []byte) os.Error {
     fmt.Sprintf("Appending %s to buffer", src)

@@ -13,43 +13,43 @@ import (
     "strconv"
 )
 
-// Marshal returns the JSON encoding of v.
+// Marshal returns the XML encoding of v.
 //
 // Marshal traverses the value v recursively.
 // If an encountered value implements the Marshaler interface,
-// Marshal calls its MarshalJSON method to produce JSON.
+// Marshal calls its MarshalXML method to produce XML.
 //
 // Otherwise, Marshal uses the following type-dependent default encodings:
 //
-// Boolean values encode as JSON booleans.
+// Boolean values encode as XML booleans.
 //
-// Floating point and integer values encode as JSON numbers.
+// Floating point and integer values encode as XML numbers.
 //
-// String values encode as JSON strings, with each invalid UTF-8 sequence
+// String values encode as XML strings, with each invalid UTF-8 sequence
 // replaced by the encoding of the Unicode replacement character U+FFFD.
 //
-// Array and slice values encode as JSON arrays.
+// Array and slice values encode as XML arrays.
 //
-// Struct values encode as JSON objects.  Each struct field becomes
+// Struct values encode as XML objects.  Each struct field becomes
 // a member of the object.  By default the object's key name is the
 // struct field name converted to lower case.  If the struct field
 // has a tag, that tag will be used as the name instead.
 //
-// Map values encode as JSON objects.
+// Map values encode as XML objects.
 // The map's key type must be string; the object keys are used directly
 // as map keys.
 //
 // Pointer values encode as the value pointed to.
-// A nil pointer encodes as the null JSON object.
+// A nil pointer encodes as the null XML object.
 //
 // Interface values encode as the value contained in the interface.
-// A nil interface value encodes as the null JSON object.
+// A nil interface value encodes as the null XML object.
 //
-// Channel, complex, and function values cannot be encoded in JSON.
+// Channel, complex, and function values cannot be encoded in XML.
 // Attempting to encode such a value causes Marshal to return
 // an InvalidTypeError.
 //
-// JSON cannot represent cyclic data structures and Marshal does not
+// XML cannot represent cyclic data structures and Marshal does not
 // handle them.  Passing cyclic structures to Marshal will result in
 // an infinite recursion.
 //
@@ -77,9 +77,9 @@ func MarshalIndent(v interface{}, prefix, indent string) ([]byte, os.Error) {
 }
 */
 // Marshaler is the interface implemented by objects that
-// can marshal themselves into valid JSON.
+// can marshal themselves into valid XML.
 type Marshaler interface {
-    MarshalJSON() ([]byte, os.Error)
+    MarshalXML() ([]byte, os.Error)
 }
 
 type UnsupportedTypeError struct {
@@ -96,7 +96,7 @@ type MarshalerError struct {
 }
 
 func (e *MarshalerError) String() string {
-    return "json: error calling MarshalJSON for type " + e.Type.String() + ": " + e.Error.String()
+    return "json: error calling MarshalXML for type " + e.Type.String() + ": " + e.Error.String()
 }
 
 type interfaceOrPtrValue interface {
@@ -106,7 +106,7 @@ type interfaceOrPtrValue interface {
 
 var hex = "0123456789abcdef"
 
-// An encodeState encodes JSON into a bytes.Buffer.
+// An encodeState encodes XML into a bytes.Buffer.
 type encodeState struct {
     bytes.Buffer // accumulated output
 }
@@ -135,9 +135,9 @@ func (e *encodeState) reflectValue(v reflect.Value) {
     }
 
     if j, ok := v.Interface().(Marshaler); ok {
-        b, err := j.MarshalJSON()
+        b, err := j.MarshalXML()
         if err == nil {
-            // copy JSON into buffer, checking validity.
+            // copy XML into buffer, checking validity.
             err = Compact(&e.Buffer, b)
         }
         if err != nil {
