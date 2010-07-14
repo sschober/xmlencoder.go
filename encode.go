@@ -54,12 +54,22 @@ import (
 // an infinite recursion.
 //
 func Marshal(v interface{}) ([]byte, os.Error) {
+  return Marshal(v, {})
+}
+
+func Marshal(v interface{}, nsmap NSMap) ([]byte, os.Error) {
     e := &encodeState{}
     err := e.marshal(v)
     if err != nil {
         return nil, err
     }
     return e.Bytes(), nil
+}
+
+type NSMap map[reflect.Type] string;
+
+func NewNSMap(v interface {}, ns string) *NSMap{
+  return &map[reflect.Type] { reflect.TypeOf(v), ns }
 }
 /*
 // MarshalIndent is like Marshal but applies Indent to format the output.

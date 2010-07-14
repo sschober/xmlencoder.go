@@ -11,12 +11,25 @@ type Roar struct {
     CreationDate string
 }
 
+func NewRoar(author, text, creationDate string) *Roar {
+  return &Roar{author, text, creationDate}
+}
+
+var r = NewRoar("Sven", "Bruell!", "14.07.2010 07:31")
+
 func TestMarshal(t *testing.T) {
-    var r = &Roar{Author: "Sven", Text: "Hallo, das ist ein Roar!",
-        CreationDate: "09.07.2010 09:44"}
     result, err := Marshal(r)
     if err != nil {
         t.Fatalf("Marshal r: %v", err)
     }
-    fmt.Printf("%s", string(result))
+    fmt.Printf("%s\n", string(result))
+}
+
+var TestMarshalAndNamespace(t *testing.T) {
+    mapping := NewNSMap(r, "myns")
+    result, err := Marshal(r, mapping)
+    if err != nil {
+        t.Fatalf("Marshal r: %v", err)
+    }
+    fmt.Printf("%s\n", string(result))
 }
