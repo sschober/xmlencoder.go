@@ -58,8 +58,22 @@ func Marshal(v interface{}) ([]byte, os.Error) {
     return MarshalWithNSMap(v, make(map[string]string))
 }
 
+// MarshalIndent is like Marshal but applies Indent to format the output.
+func MarshalIndent(v interface{}, prefix, indent string) ([]byte, os.Error) {
+    b, err := Marshal(v)
+    if err != nil {
+        return nil, err
+    }
+    var buf bytes.Buffer
+    err = Indent(&buf, b, prefix, indent)
+    if err != nil {
+        return nil, err
+    }
+    return buf.Bytes(), nil
+}
+
 func MarshalWithNSMap(v interface{}, nsmap NSMap) ([]byte, os.Error) {
-    e := &encodeState{nsmap:nsmap}
+    e := &encodeState{nsmap: nsmap}
     err := e.marshal(v)
     if err != nil {
         return nil, err
@@ -79,30 +93,16 @@ type NSMap map[string]string
 func NewNSMap(v interface{}, ns string) NSMap {
     var typeName string
     rf := reflect.NewValue(v)
-    switch rt := rf.(type){
-      case interfaceOrPtrValue:
-	typeName = rt.Elem().Type().Name()
-      default:
-	typeName = rt.Type().Name()
+    switch rt := rf.(type) {
+    case interfaceOrPtrValue:
+        typeName = rt.Elem().Type().Name()
+    default:
+        typeName = rt.Type().Name()
     }
     fmt.Printf("Adding %s\n", typeName)
-    return NSMap{typeName:ns}
+    return NSMap{typeName: ns}
 }
-/*
-// MarshalIndent is like Marshal but applies Indent to format the output.
-func MarshalIndent(v interface{}, prefix, indent string) ([]byte, os.Error) {
-	b, err := Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-	var buf bytes.Buffer
-	err = Indent(&buf, b, prefix, indent)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-*/
+
 // Marshaler is the interface implemented by objects that
 // can marshal themselves into valid XML.
 type Marshaler interface {
@@ -136,7 +136,7 @@ var hex = "0123456789abcdef"
 // An encodeState encodes XML into a bytes.Buffer.
 type encodeState struct {
     bytes.Buffer // accumulated output
-    nsmap NSMap
+    nsmap        NSMap
 }
 
 func (e *encodeState) marshal(v interface{}) (err os.Error) {
@@ -271,7 +271,7 @@ func (e *encodeState) openTag(s string) {
     e.WriteByte('<')
     e.WriteString(s)
     if ns, ok := e.nsmap[s]; ok {
-      e.WriteString(" xmlns=\""+ns+"\"")
+        e.WriteString(" xmlns=\"" + ns + "\"")
     }
     e.WriteByte('>')
 }

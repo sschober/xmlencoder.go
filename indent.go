@@ -18,6 +18,66 @@ func Compact(dst *bytes.Buffer, src []byte) os.Error {
     return nil
 }
 
+// Encodes the state of parsing
+const (
+    parseStart = iota
+    parseOpenBracket
+    parseOpenBracketAfterStart
+    parseOpenBracketAfterEndElem
+    parseStartElem
+    parseEndElem
+)
+
+func Indent(dst *bytes.Buffer, src []byte, prefix, indent string) os.Error {
+    var state = parseStart
+    var depth = 0
+    var buf bytes.Buffer
+
+    for _, c := range src {
+        switch c {
+        case '<':
+            buf.WriteTo(dst)
+            buf.Reset()
+            buf.WriteByte(c)
+            switch state {
+            case parseStart:
+                state = parseOpenBracketAfterStart
+            case parseEndElem:
+                state = parseOpenBracketAfterEndElem
+            default:
+                state = parseOpenBracket
+            }
+        case '/':
+            switch state {
+            case parseOpenBracket:
+                state = parseEndElem
+            case parseOpenBracketAfterEndElem:
+                depth--
+                newline(dst, prefix, indent, depth)
+                state = parseEndElem
+            }
+            buf.WriteByte(c)
+        case '>':
+            buf.WriteByte(c)
+            buf.WriteTo(dst)
+        default:
+            switch state {
+            case parseOpenBracket:
+                depth++
+                newline(dst, prefix, indent, depth)
+                state = parseStartElem
+            case parseOpenBracketAfterEndElem:
+                newline(dst, prefix, indent, depth)
+                state = parseStartElem
+            case parseOpenBracketAfterStart:
+                state = parseStartElem
+            }
+            buf.WriteByte(c)
+        }
+    }
+    return nil
+}
+
 func newline(dst *bytes.Buffer, prefix, indent string, depth int) {
     dst.WriteByte('\n')
     dst.WriteString(prefix)
