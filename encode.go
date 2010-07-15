@@ -11,6 +11,7 @@ import (
     "runtime"
     "sort"
     "strconv"
+    "fmt"
 )
 
 // Marshal returns the XML encoding of v.
@@ -54,12 +55,38 @@ import (
 // an infinite recursion.
 //
 func Marshal(v interface{}) ([]byte, os.Error) {
-    e := &encodeState{}
+    return MarshalWithNSMap(v, make(map[string]string))
+}
+
+func MarshalWithNSMap(v interface{}, nsmap NSMap) ([]byte, os.Error) {
+    e := &encodeState{nsmap:nsmap}
     err := e.marshal(v)
     if err != nil {
         return nil, err
     }
     return e.Bytes(), nil
+}
+
+//type NSMap map[reflect.Type]string
+type NSMap map[string]string
+
+// Adds a namespace mapping for type of v
+//
+// Note:
+//  This seems overly complex, as i have to create a reflect value
+//  first. Then I have to check if its an interfaceOrPtrValue an if
+//  so, consider its Elem(), then its Type().Name().
+func NewNSMap(v interface{}, ns string) NSMap {
+    var typeName string
+    rf := reflect.NewValue(v)
+    switch rt := rf.(type){
+      case interfaceOrPtrValue:
+	typeName = rt.Elem().Type().Name()
+      default:
+	typeName = rt.Type().Name()
+    }
+    fmt.Printf("Adding %s\n", typeName)
+    return NSMap{typeName:ns}
 }
 /*
 // MarshalIndent is like Marshal but applies Indent to format the output.
@@ -109,6 +136,7 @@ var hex = "0123456789abcdef"
 // An encodeState encodes XML into a bytes.Buffer.
 type encodeState struct {
     bytes.Buffer // accumulated output
+    nsmap NSMap
 }
 
 func (e *encodeState) marshal(v interface{}) (err os.Error) {
@@ -169,21 +197,21 @@ func (e *encodeState) reflectValue(v reflect.Value) {
 
     case *reflect.StructValue:
         t := v.Type().(*reflect.StructType)
-	e.openTag(t.Name())
+        e.openTag(t.Name())
         n := v.NumField()
         for i := 0; i < n; i++ {
             f := t.Field(i)
             if f.Tag != "" {
                 e.openTag(f.Tag)
-		e.reflectValue(v.Field(i))
+                e.reflectValue(v.Field(i))
                 e.closeTag(f.Tag)
             } else {
                 e.openTag(f.Name)
-		e.reflectValue(v.Field(i))
+                e.reflectValue(v.Field(i))
                 e.closeTag(f.Name)
             }
         }
-	e.closeTag(t.Name())
+        e.closeTag(t.Name())
 
     case *reflect.MapValue:
         if _, ok := v.Type().(*reflect.MapType).Key().(*reflect.StringType); !ok {
@@ -239,16 +267,19 @@ func (sv stringValues) Swap(i, j int)      { sv[i], sv[j] = sv[j], sv[i] }
 func (sv stringValues) Less(i, j int) bool { return sv.get(i) < sv.get(j) }
 func (sv stringValues) get(i int) string   { return sv[i].(*reflect.StringValue).Get() }
 
-func (e *encodeState) openTag(s string){
-        e.WriteByte('<')
-	e.WriteString(s)
-	e.WriteByte('>')
+func (e *encodeState) openTag(s string) {
+    e.WriteByte('<')
+    e.WriteString(s)
+    if ns, ok := e.nsmap[s]; ok {
+      e.WriteString(" xmlns=\""+ns+"\"")
+    }
+    e.WriteByte('>')
 }
 
-func (e *encodeState) closeTag(s string){
-        e.WriteString("</")
-	e.WriteString(s)
-	e.WriteByte('>')
+func (e *encodeState) closeTag(s string) {
+    e.WriteString("</")
+    e.WriteString(s)
+    e.WriteByte('>')
 }
 
 func (e *encodeState) string(s string) {
