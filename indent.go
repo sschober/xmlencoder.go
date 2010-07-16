@@ -36,17 +36,18 @@ func Indent(dst *bytes.Buffer, src []byte, prefix, indent string) os.Error {
     for _, c := range src {
         switch c {
         case '<':
-            buf.WriteTo(dst)
-            buf.Reset()
-            buf.WriteByte(c)
             switch state {
             case parseStart:
+		buf.WriteString(prefix)
                 state = parseOpenBracketAfterStart
             case parseEndElem:
                 state = parseOpenBracketAfterEndElem
             default:
                 state = parseOpenBracket
             }
+            buf.WriteTo(dst)
+            buf.Reset()
+            buf.WriteByte(c)
         case '/':
             switch state {
             case parseOpenBracket:
